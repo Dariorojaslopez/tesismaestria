@@ -1,0 +1,12 @@
+export { HomeHero } from "./HomeHero";
+export { HomeLanding } from "./HomeLanding";
+export { LandingHero } from "./LandingHero";
+export { HeroProductVisual } from "./HeroProductVisual";
+export { HeroLifestyleImage } from "./HeroLifestyleImage";
+export { CatalogSection } from "./CatalogSection";
+export { HowItWorksSection } from "./HowItWorksSection";
+export { TechnologyBehindSection } from "./TechnologyBehindSection";
+export { NaturalTreatmentsSection } from "./NaturalTreatmentsSection";
+export { SiteFooter } from "./SiteFooter";
+export { TechnologyStrategySection } from "./TechnologyStrategySection";
+export { EllasBrandSection } from "./EllasBrandSection";

@@ -1,0 +1,10 @@
+/* PWA mínimo: permite instalación y actualización sin cache agresivo. */
+self.addEventListener("install", (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("fetch", () => {});

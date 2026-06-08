@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Treatment {
+  id                    String   @id
+  name                  String
+  vitamins              String?
+  chemicallyTreatedNote String?  @map("chemically_treated_note")
+  generalNote           String?  @map("general_note")
+  imageNum              Int?     @map("image_num")
+  sortOrder             Int      @default(0) @map("sort_order")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  ingredients           TreatmentIngredient[]
+  benefits              TreatmentBenefit[]
+  symptoms              TreatmentSymptom[]
+  afroBenefits          AfroBenefit[]
+  recommendations       DiagnosisRecommendation[]
+
+  @@map("treatments")
+}
+
+model TreatmentIngredient {
+  id          Int       @id @default(autoincrement())
+  treatmentId String    @map("treatment_id")
+  text        String
+  sortOrder   Int       @default(0) @map("sort_order")
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@map("treatment_ingredients")
+}
+
+model TreatmentBenefit {
+  id          Int       @id @default(autoincrement())
+  treatmentId String    @map("treatment_id")
+  text        String
+  sortOrder   Int       @default(0) @map("sort_order")
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@map("treatment_benefits")
+}
+
+model TreatmentSymptom {
+  id          Int       @id @default(autoincrement())
+  treatmentId String    @map("treatment_id")
+  text        String
+  sortOrder   Int       @default(0) @map("sort_order")
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@map("treatment_symptoms")
+}
+
+model AfroBenefit {
+  id          Int       @id @default(autoincrement())
+  treatmentId String    @map("treatment_id")
+  subType     String    @map("sub_type")
+  description String
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@unique([treatmentId, subType])
+  @@map("afro_benefits")
+}
+
+model HairType {
+  id        String @id
+  label     String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  @@map("hair_types")
+}
+
+model AfroSubType {
+  id          String @id
+  label       String
+  description String
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  @@map("afro_sub_types")
+}
+
+model FormSymptom {
+  id        Int    @id @default(autoincrement())
+  value     String @unique
+  label     String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  @@map("form_symptoms")
+}
+
+model DiagnosisSession {
+  id            String   @id @default(cuid())
+  hairType      String?  @map("hair_type")
+  hairTypeLabel String?  @map("hair_type_label")
+  afroSubType   String?  @map("afro_sub_type")
+  explanation   String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  symptoms        DiagnosisSymptom[]
+  recommendations DiagnosisRecommendation[]
+
+  @@map("diagnosis_sessions")
+}
+
+model DiagnosisSymptom {
+  id        Int              @id @default(autoincrement())
+  sessionId String           @map("session_id")
+  text      String
+  session   DiagnosisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("diagnosis_symptom_entries")
+}
+
+model DiagnosisRecommendation {
+  id          Int              @id @default(autoincrement())
+  sessionId   String           @map("session_id")
+  treatmentId String           @map("treatment_id")
+  score       Int
+  rank        Int
+  session     DiagnosisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  treatment   Treatment        @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@map("diagnosis_recommendations")
+}

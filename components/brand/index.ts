@@ -1,0 +1,1 @@
+export { EllasLogo } from "./EllasLogo";

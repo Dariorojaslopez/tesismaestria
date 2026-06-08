@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #1d1d1f;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-muted: #f5f5f7;
+  --muted: #86868b;
+  --apple-blue: #0071e3;
+  --gold: #d4af37;
+  --gold-light: #f4e4bc;
+  --chat-bg: #e5e5ea;
+  --chat-drawer-surface: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  min-height: 100dvh;
+}
+
+@keyframes catalog-marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.catalog-marquee-track {
+  animation: catalog-marquee-scroll 100s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-marquee-track {
+    animation: none;
+  }
+}
+
+.catalog-marquee-wrap:hover .catalog-marquee-track {
+  animation-play-state: paused;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /** Acento Ellas sobre fondos claros */
+  .text-gradient-gold {
+    background: linear-gradient(
+      125deg,
+      #a67c1a 0%,
+      #c9a227 35%,
+      #d4af37 55%,
+      #8a7030 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
