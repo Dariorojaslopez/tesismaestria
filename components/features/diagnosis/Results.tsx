@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useId, useState } from "react";
+import { AddToCartButton } from "@/components/cart";
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
 import { brandImageSrcForTreatmentId } from "@/lib/brandProductImage";
 import { cn } from "@/lib/utils";
@@ -63,25 +64,6 @@ function TreatmentBrandImage({
         onError={() => setFailed(true)}
       />
     </div>
-  );
-}
-
-function CartIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="9" cy="20" r="1.25" />
-      <circle cx="17" cy="20" r="1.25" />
-      <path d="M3 4h2l.6 3m0 0 .76 3.78a1 1 0 0 01 .82H19a1 1 0 0 0 .95-.68l1.6-5.34H6.16" />
-    </svg>
   );
 }
 
@@ -257,14 +239,10 @@ function ProductModal({
             ) : null}
 
             <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 sm:w-auto"
-                aria-label="Realiza tu pedido (disponible próximamente)"
-              >
-                <CartIcon className="size-5 shrink-0 opacity-95" />
-                Realiza tu pedido
-              </button>
+              <AddToCartButton
+                treatmentId={treatment.id}
+                treatmentName={treatment.name}
+              />
             </div>
           </motion.div>
         </motion.div>

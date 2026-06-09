@@ -11,6 +11,8 @@ let cachedVoice: SpeechSynthesisVoice | null = null;
 let voicesPrimed = false;
 const animatingKeys = new Set<string>();
 const completedKeys = new Set<string>();
+/** Evita doble lectura en el primer montaje (React Strict Mode / carga de voces). */
+const scheduledKeys = new Set<string>();
 
 const PAUSE_BETWEEN_MS = 420;
 
@@ -173,15 +175,22 @@ async function flushQueue(): Promise<void> {
   const next = queue.shift();
   if (!next) return;
 
-  if (!voicesPrimed) {
-    await waitForVoices();
-    voicesPrimed = true;
-    cachedVoice = null;
-  }
-
   processing = true;
-  animatingKeys.add(next.key);
-  speakNext(next);
+
+  try {
+    if (!voicesPrimed) {
+      await waitForVoices();
+      voicesPrimed = true;
+      cachedVoice = null;
+    }
+
+    animatingKeys.add(next.key);
+    speakNext(next);
+  } catch {
+    animatingKeys.delete(next.key);
+    processing = false;
+    void flushQueue();
+  }
 }
 
 /** Encola lectura; evita duplicar la misma clave en cola (p. ej. Strict Mode). */
@@ -189,9 +198,11 @@ export function enqueueBotSpeech(text: string, key: string): void {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   const trimmed = text.replace(/\s+/g, " ").trim();
   if (!trimmed) return;
+  if (scheduledKeys.has(key)) return;
   if (animatingKeys.has(key) || completedKeys.has(key)) return;
   if (queue.some((item) => item.key === key)) return;
 
+  scheduledKeys.add(key);
   queue.push({ text: trimmed, key });
   void flushQueue();
 }
@@ -201,6 +212,7 @@ export function cancelBotSpeech(): void {
   processing = false;
   animatingKeys.clear();
   completedKeys.clear();
+  scheduledKeys.clear();
   if (typeof window !== "undefined" && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }

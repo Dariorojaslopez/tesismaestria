@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AddToCartButton } from "@/components/cart";
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
 import { MASCARILLA_BASE } from "@/lib/mascarillaRoutes";
 
@@ -157,7 +158,11 @@ export function MascarillaDetail({
         </Section>
       ) : null}
 
-      <footer className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-8">
+      <footer className="flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:flex-wrap sm:items-center">
+        <AddToCartButton
+          treatmentId={treatment.id}
+          treatmentName={treatment.name}
+        />
         <Link
           href="/#diagnostico"
           className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"

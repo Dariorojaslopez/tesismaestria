@@ -74,6 +74,7 @@ async function seedTreatments() {
         chemicallyTreatedNote: treatment.chemicallyTreatedNote ?? null,
         generalNote: treatment.generalNote ?? null,
         imageNum,
+        priceInCents: 3_500_000,
         sortOrder: index,
       },
       create: {
@@ -83,6 +84,7 @@ async function seedTreatments() {
         chemicallyTreatedNote: treatment.chemicallyTreatedNote ?? null,
         generalNote: treatment.generalNote ?? null,
         imageNum,
+        priceInCents: 3_500_000,
         sortOrder: index,
       },
     });
