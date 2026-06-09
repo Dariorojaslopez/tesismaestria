@@ -10,6 +10,9 @@ export type ScoredTreatment = {
   score: number;
 };
 
+/** Tratamiento por defecto cuando ninguna regla coincide (Cebolla / ONION BOOST). */
+export const DEFAULT_FALLBACK_TREATMENT_ID = "onion-boost";
+
 function normalize(text: string): string {
   return text
     .normalize("NFD")
@@ -103,6 +106,20 @@ function rankTreatments(
     );
 }
 
+function applyDefaultFallback(
+  ranked: ScoredTreatment[],
+  treatments: readonly TreatmentRecord[],
+): ScoredTreatment[] {
+  if (ranked.length > 0) return ranked;
+
+  const fallback = treatments.find(
+    (treatment) => treatment.id === DEFAULT_FALLBACK_TREATMENT_ID,
+  );
+  if (!fallback) return [];
+
+  return [{ treatment: fallback, score: 0 }];
+}
+
 export function getRecommendationsWithScores(
   symptoms: string[],
   treatments: readonly TreatmentRecord[],
@@ -112,7 +129,8 @@ export function getRecommendationsWithScores(
     new Set(symptoms.map(normalize).filter((s) => s.length > 0)),
   );
   if (userSymptomsNorm.length === 0) return [];
-  return rankTreatments(treatments, userSymptomsNorm, context);
+  const ranked = rankTreatments(treatments, userSymptomsNorm, context);
+  return applyDefaultFallback(ranked, treatments);
 }
 
 export function getRecommendations(
