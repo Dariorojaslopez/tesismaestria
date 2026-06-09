@@ -5,34 +5,75 @@ import {
   createSessionToken,
   sessionCookieOptions,
 } from "@/lib/auth/session";
-import { AuthError, registerUser } from "@/services/auth/authService";
+import { AuthError, loginUser, registerUser } from "@/services/auth/authService";
 
 export const dynamic = "force-dynamic";
 
+async function startSession(user: {
+  id: string;
+  email: string;
+  names: string;
+}) {
+  const token = await createSessionToken({
+    userId: user.id,
+    email: user.email,
+    names: user.names,
+  });
+  cookies().set(sessionCookieOptions(token));
+  return user;
+}
+
 export async function POST(request: Request) {
+  let body: Record<string, unknown>;
+
   try {
-    const body = (await request.json()) as Record<string, unknown>;
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json(
+      { error: "La solicitud no tiene un formato válido.", code: "INVALID_BODY" },
+      { status: 400 },
+    );
+  }
+
+  const credentials = {
+    email: String(body.email ?? ""),
+    password: String(body.password ?? ""),
+  };
+
+  try {
     const user = await registerUser({
-      email: String(body.email ?? ""),
-      password: String(body.password ?? ""),
+      ...credentials,
       names: String(body.names ?? ""),
       address: String(body.address ?? ""),
       department: String(body.department ?? ""),
       city: String(body.city ?? ""),
     });
 
-    const token = await createSessionToken({
-      userId: user.id,
-      email: user.email,
-      names: user.names,
-    });
-    cookies().set(sessionCookieOptions(token));
-
+    await startSession(user);
     return NextResponse.json({ user });
   } catch (error) {
     if (error instanceof AuthError) {
-      const status = error.code === "CONFLICT" ? 409 : 400;
-      return NextResponse.json({ error: error.message, code: error.code }, { status });
+      if (error.code === "CONFLICT") {
+        try {
+          const user = await loginUser(credentials);
+          await startSession(user);
+          return NextResponse.json({ user });
+        } catch {
+          return NextResponse.json(
+            {
+              error:
+                "Este correo ya está registrado. Inicia sesión con tu contraseña o usa «¿Olvidaste tu contraseña?».",
+              code: "CONFLICT",
+            },
+            { status: 409 },
+          );
+        }
+      }
+
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 400 },
+      );
     }
     if (
       error instanceof Error &&

@@ -61,14 +61,15 @@ function validateRegister(input: RegisterInput) {
 }
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
-  validateRegister(input);
+  const password = input.password.trim();
+  validateRegister({ ...input, password });
   const email = normalizeEmail(input.email);
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw new AuthError("Ya existe una cuenta con ese correo.", "CONFLICT");
   }
 
-  const passwordHash = await bcrypt.hash(input.password, 10);
+  const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
       email,
@@ -85,7 +86,8 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
 
 export async function loginUser(input: LoginInput): Promise<PublicUser> {
   const email = normalizeEmail(input.email);
-  if (!email || !input.password) {
+  const password = input.password.trim();
+  if (!email || !password) {
     throw new AuthError("Correo y contraseña son obligatorios.", "VALIDATION");
   }
 
@@ -94,7 +96,7 @@ export async function loginUser(input: LoginInput): Promise<PublicUser> {
     throw new AuthError("Correo o contraseña incorrectos.", "INVALID_CREDENTIALS");
   }
 
-  const valid = await bcrypt.compare(input.password, user.passwordHash);
+  const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     throw new AuthError("Correo o contraseña incorrectos.", "INVALID_CREDENTIALS");
   }

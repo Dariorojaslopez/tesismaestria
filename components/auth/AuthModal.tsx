@@ -83,8 +83,22 @@ export function AuthModal({
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as { user?: PublicUser; error?: string };
+      const data = (await res.json()) as {
+        user?: PublicUser;
+        error?: string;
+        code?: string;
+      };
       if (!res.ok) {
+        if (res.status === 409 && view === "register") {
+          setView("login");
+          onModeChange("login");
+        }
+        if (res.status === 401 && view === "login") {
+          setError(
+            "Correo o contraseña incorrectos. Si te registraste y viste un error en pantalla, usa «¿Olvidaste tu contraseña?» para recibir una nueva.",
+          );
+          return;
+        }
         setError(data.error ?? "No se pudo completar la solicitud.");
         return;
       }
