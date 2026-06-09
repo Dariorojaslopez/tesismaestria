@@ -80,23 +80,30 @@ function ChatBubble({
   role,
   children,
   speechKey,
+  speechText,
 }: {
   role: "bot" | "user";
   children: React.ReactNode;
   /** Identificador estable para TTS del asistente (solo rol bot). */
   speechKey?: string;
+  /** Texto leído en voz alta; si no se indica, usa el contenido visible. */
+  speechText?: string;
 }) {
   const transition = { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const };
   const botContentRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (role !== "bot" || !speechKey) return;
-    const el = botContentRef.current;
-    if (!el) return;
-    const text = el.innerText.replace(/\s+/g, " ").trim();
+    const text = (
+      speechText ??
+      botContentRef.current?.innerText ??
+      ""
+    )
+      .replace(/\s+/g, " ")
+      .trim();
     if (!text) return;
     enqueueBotSpeech(text, speechKey);
-  }, [role, speechKey]);
+  }, [role, speechKey, speechText]);
 
   if (role === "bot") {
     return (
@@ -451,7 +458,7 @@ export function HairDiagnosisForm({
             Paso 1: tipo de cabello
           </h2>
 
-          <ChatBubble role="bot" speechKey="bot-saludo">
+          <ChatBubble role="bot" speechKey="bot-saludo" speechText="¡Hola!">
             <p className="font-semibold text-zinc-900">¡Hola!</p>
             <p className="mt-1.5 text-zinc-600">
               Vamos en tres pasos: primero tu tipo de cabello, luego lo que te
@@ -459,8 +466,14 @@ export function HairDiagnosisForm({
             </p>
           </ChatBubble>
 
-          <ChatBubble role="bot" speechKey="bot-paso1-tipo">
-            <p className="font-semibold text-zinc-900">Paso 1 de 3</p>
+          <ChatBubble
+            role="bot"
+            speechKey="bot-paso1-tipo"
+            speechText="¿Cuál es tu tipo de cabello?"
+          >
+            <p className="font-semibold text-zinc-900" aria-hidden="true">
+              Paso 1 de 3
+            </p>
             <p className="mt-1">¿Cuál es tu tipo de cabello?</p>
           </ChatBubble>
 
@@ -510,8 +523,14 @@ export function HairDiagnosisForm({
 
             {phase === "afro" ? (
               <>
-                <ChatBubble role="bot" speechKey="bot-paso1-afro">
-                  <p className="font-semibold text-zinc-900">Paso 1 de 3</p>
+                <ChatBubble
+                  role="bot"
+                  speechKey="bot-paso1-afro"
+                  speechText="¿Cuál se acerca más al tuyo: 4A, 4B o 4C?"
+                >
+                  <p className="font-semibold text-zinc-900" aria-hidden="true">
+                    Paso 1 de 3
+                  </p>
                   <p className="mt-1">
                     En cabello crespo / afro usamos la clasificación 4A, 4B y
                     4C. ¿Cuál se acerca más al tuyo?
@@ -545,8 +564,14 @@ export function HairDiagnosisForm({
             ) : null}
 
             {phase === "symptoms" ? (
-              <ChatBubble role="bot" speechKey="bot-paso2-sintomas">
-                <p className="font-semibold text-zinc-900">Paso 2 de 3</p>
+              <ChatBubble
+                role="bot"
+                speechKey="bot-paso2-sintomas"
+                speechText="¿Qué problema presentas?"
+              >
+                <p className="font-semibold text-zinc-900" aria-hidden="true">
+                  Paso 2 de 3
+                </p>
                 <p className="mt-1">¿Qué problema presentas?</p>
                 <p className="mt-2 text-sm text-zinc-600">
                   Puedes marcar varios a la vez. Luego pediremos las
@@ -626,8 +651,14 @@ export function HairDiagnosisForm({
               <p>{symptomLabelsJoined}</p>
             </ChatBubble>
 
-            <ChatBubble role="bot" speechKey="bot-paso3-resultados">
-              <p className="font-semibold text-zinc-900">Paso 3 de 3</p>
+            <ChatBubble
+              role="bot"
+              speechKey="bot-paso3-resultados"
+              speechText="Con lo que me cuentas, esto encaja bien contigo."
+            >
+              <p className="font-semibold text-zinc-900" aria-hidden="true">
+                Paso 3 de 3
+              </p>
               <p className="mt-1">
                 Con lo que me cuentas, esto encaja bien contigo
               </p>
