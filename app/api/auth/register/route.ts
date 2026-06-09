@@ -34,6 +34,19 @@ export async function POST(request: Request) {
       const status = error.code === "CONFLICT" ? 409 : 400;
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
+    if (
+      error instanceof Error &&
+      error.message.includes("AUTH_SECRET")
+    ) {
+      console.error("[api/auth/register] AUTH_SECRET no configurado");
+      return NextResponse.json(
+        {
+          error: "El servidor no está configurado para sesiones. Contacta soporte.",
+          code: "CONFIG",
+        },
+        { status: 503 },
+      );
+    }
     console.error("[api/auth/register]", error);
     cookies().set(clearSessionCookieOptions());
     return NextResponse.json(

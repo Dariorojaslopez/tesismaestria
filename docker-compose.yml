@@ -23,7 +23,10 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
+      # Sobrescribe localhost del .env de desarrollo por el host del compose.
       DATABASE_URL: postgresql://ellas:ellas@db:5432/chatbot_capilar?schema=public
       NODE_ENV: production
     depends_on:
