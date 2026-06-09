@@ -15,10 +15,27 @@ function getVoices(): SpeechSynthesisVoice[] {
   return window.speechSynthesis.getVoices() ?? [];
 }
 
+const FEMALE_VOICE_HINTS =
+  /female|femenina|mujer|woman|sabina|helena|elvira|luc[ií]a|paulina|monica|mónica|paola|sof[ií]a|karla|luciana|dalia|valentina|esperanza|irene|paloma|marina|catalina|beatriz|salom[eé]|camila|isabella|laura|natalia|neural2-a\b|standard-a\b|wavenet-a\b|es-[a-z]{2}-.*\ba\b/i;
+
+const MALE_VOICE_HINTS =
+  /male|masculino|hombre|man\b|pablo|jorge|carlos|diego|ra[uú]l|alonso|bienvenido|neural2-b\b|standard-b\b|wavenet-b\b|es-[a-z]{2}-.*\bb\b/i;
+
+function isFemaleVoice(v: SpeechSynthesisVoice): boolean {
+  return FEMALE_VOICE_HINTS.test(v.name);
+}
+
+function isMaleVoice(v: SpeechSynthesisVoice): boolean {
+  return MALE_VOICE_HINTS.test(v.name);
+}
+
 function scoreVoice(v: SpeechSynthesisVoice): number {
   const lang = v.lang.toLowerCase();
   const name = v.name.toLowerCase();
   let score = 0;
+
+  if (isFemaleVoice(v)) score += 200;
+  if (isMaleVoice(v)) score -= 250;
 
   if (lang.startsWith("es-419") || lang.startsWith("es-mx")) score += 55;
   else if (lang.startsWith("es-ar") || lang.startsWith("es-co")) score += 48;
@@ -41,14 +58,6 @@ function scoreVoice(v: SpeechSynthesisVoice): number {
 
   if (/microsoft.*(neural|natural|online)/i.test(name)) score += 50;
 
-  if (
-    /female|mujer|femenina|sabina|paola|sof[ií]a|monica|mónica|helena|karla|luciana|dalia|valentina|esperanza|irene|elvira|paloma|marina|catalina|beatriz|luc[ií]a/i.test(
-      name,
-    )
-  ) {
-    score += 38;
-  }
-
   if (/mexico|méxico|latam|latino|colombia|argentina|419|centroam/i.test(name)) {
     score += 14;
   }
@@ -62,9 +71,14 @@ function scoreVoice(v: SpeechSynthesisVoice): number {
 function pickVoice(): SpeechSynthesisVoice | null {
   const voices = getVoices().filter((v) => v.lang.toLowerCase().startsWith("es"));
   if (voices.length === 0) return null;
-  let best = voices[0];
-  for (let i = 1; i < voices.length; i++) {
-    if (scoreVoice(voices[i]) > scoreVoice(best)) best = voices[i];
+
+  const femaleVoices = voices.filter(isFemaleVoice);
+  const pool = femaleVoices.length > 0 ? femaleVoices : voices.filter((v) => !isMaleVoice(v));
+  const candidates = pool.length > 0 ? pool : voices;
+
+  let best = candidates[0];
+  for (let i = 1; i < candidates.length; i++) {
+    if (scoreVoice(candidates[i]) > scoreVoice(best)) best = candidates[i];
   }
   return best;
 }
@@ -79,12 +93,14 @@ function flushQueue(): void {
   animatingKeys.add(next.key);
   const utterance = new SpeechSynthesisUtterance(next.text);
   utterance.lang = "es-419";
-  /** Más lento y menos agudo → sensación más suave y menos “sintética”. */
-  utterance.rate = 0.87;
-  utterance.pitch = 1.02;
+  const voice = pickVoice();
+  const female = voice ? isFemaleVoice(voice) : false;
+
+  /** Ritmo suave; pitch un poco más alto si no hay voz femenina explícita en el SO. */
+  utterance.rate = 0.9;
+  utterance.pitch = female ? 1.05 : 1.12;
   utterance.volume = 0.94;
 
-  const voice = pickVoice();
   if (voice) {
     utterance.voice = voice;
     utterance.lang = voice.lang || utterance.lang;
