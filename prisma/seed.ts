@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { AFRO_TYPE_OPTIONS } from "../data/afroHairTypes";
 import { TREATMENTS } from "../data/treatments";
 import { TREATMENT_BRAND_IMAGE_NUM } from "../lib/brandProductImage";
+import { seedObservatory } from "./seedObservatory";
 
 const prisma = new PrismaClient();
 
@@ -143,6 +144,7 @@ async function seedTreatments() {
 async function main() {
   await seedTaxonomies();
   await seedTreatments();
+  await seedObservatory(prisma);
   console.log(`Seed completado: ${TREATMENTS.length} tratamientos.`);
 }
 

@@ -1,6 +1,6 @@
 /**
  * Imágenes en `public/brand/{n}.png` alineadas al catálogo de tratamientos (por `id`).
- * Números 11–15 corresponden a BOTANIHAIR BLEND (un solo producto en datos: `botanihair-blend`).
+ * Números 10–14 corresponden a variantes de BOTANIHAIR BLEND (`botanihair-blend`).
  */
 export const TREATMENT_BRAND_IMAGE_NUM: Readonly<Record<string, number>> = {
   "coco-glow": 1,
@@ -12,17 +12,17 @@ export const TREATMENT_BRAND_IMAGE_NUM: Readonly<Record<string, number>> = {
   guavamask: 7,
   "gunaba-luxe": 8,
   papayasmooth: 9,
-  "botanihair-blend": 11,
-  "vigor-coffe": 16,
-  "chocohair-glow": 17,
-  beetrootradiance: 18,
-  "caro-tress-elixir": 19,
-  rosvitalhair: 20,
-  "aloe-fresh-hair": 21,
-  "mango-glow-hair": 22,
-  afroglow: 23,
-  "herbal-roots": 24,
-  "tropical-repair": 25,
+  "botanihair-blend": 10,
+  "vigor-coffe": 15,
+  "chocohair-glow": 16,
+  beetrootradiance: 17,
+  "caro-tress-elixir": 18,
+  rosvitalhair: 19,
+  "aloe-fresh-hair": 20,
+  "mango-glow-hair": 21,
+  afroglow: 22,
+  "herbal-roots": 23,
+  "tropical-repair": 24,
 };
 
 export function brandImageSrcForTreatmentId(id: string): string | null {

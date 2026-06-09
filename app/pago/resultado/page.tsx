@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatCopFromCents } from "@/lib/money";
 import { getOrderByReference } from "@/services/checkout/checkoutService";
+import { syncOrderPaymentIfNeeded } from "@/services/checkout/orderFulfillment";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,13 @@ type PageProps = {
 export default async function PagoResultadoPage({ searchParams }: PageProps) {
   const refRaw = searchParams.ref ?? searchParams.reference;
   const reference = Array.isArray(refRaw) ? refRaw[0] : refRaw;
+  const txRaw = searchParams.id;
+  const wompiTransactionId = Array.isArray(txRaw) ? txRaw[0] : txRaw;
+
+  if (reference) {
+    await syncOrderPaymentIfNeeded(reference, wompiTransactionId);
+  }
+
   const order = reference ? await getOrderByReference(reference) : null;
 
   return (
@@ -34,7 +42,19 @@ export default async function PagoResultadoPage({ searchParams }: PageProps) {
             </p>
             <p>
               Estado del pedido:{" "}
-              <span className="font-medium text-emerald-800">{order.status}</span>
+              <span
+                className={`font-medium ${
+                  order.status === "APPROVED"
+                    ? "text-emerald-800"
+                    : "text-amber-800"
+                }`}
+              >
+                {order.status === "APPROVED"
+                  ? "Pagado"
+                  : order.status === "PENDING"
+                    ? "Pendiente de confirmación"
+                    : order.status}
+              </span>
             </p>
             <p className="leading-relaxed text-slate-600">
               Si Wompi aprobó el pago, recibirás la confirmación en tu correo.

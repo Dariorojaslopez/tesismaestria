@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:setup": "prisma migrate deploy && prisma db seed",
     "db:studio": "prisma studio",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
@@ -22,15 +23,16 @@
     "bcryptjs": "^3.0.2",
     "framer-motion": "^12.38.0",
     "jose": "^6.0.11",
-    "nodemailer": "^7.0.3",
     "next": "14.2.35",
+    "nodemailer": "^7.0.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/nodemailer": "^6.4.17",
     "@types/node": "^20.17.6",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",

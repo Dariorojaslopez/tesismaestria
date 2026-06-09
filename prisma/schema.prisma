@@ -52,8 +52,9 @@ model Order {
   status       String      @default("PENDING")
   totalInCents Int         @map("total_in_cents")
   currency     String      @default("COP")
-  wompiTxId    String?     @map("wompi_tx_id")
-  createdAt    DateTime    @default(now()) @map("created_at")
+  wompiTxId           String?   @map("wompi_tx_id")
+  purchaseNotifiedAt  DateTime? @map("purchase_notified_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items        OrderItem[]
@@ -187,4 +188,53 @@ model DiagnosisRecommendation {
   treatment   Treatment        @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
 
   @@map("diagnosis_recommendations")
+}
+
+model ObservatorySurvey {
+  id                      String   @id @default(cuid())
+  name                    String
+  ageRange                String?  @map("age_range")
+  city                    String
+  email                   String?
+  hairType                String   @map("hair_type")
+  afroSubType             String?  @map("afro_sub_type")
+  washFrequency           String?  @map("wash_frequency")
+  usesHeat                Boolean  @default(false) @map("uses_heat")
+  usesChemicals           Boolean  @default(false) @map("uses_chemicals")
+  careRoutine             String?  @map("care_routine")
+  naturalProductsInterest String?  @map("natural_products_interest")
+  wantsRecommendations    Boolean  @default(true) @map("wants_recommendations")
+  wantsNewsletter         Boolean  @default(false) @map("wants_newsletter")
+  purchaseIntent          String?  @map("purchase_intent")
+  compatibilityPercent    Int      @map("compatibility_percent")
+  acceptedRecommendation  Boolean  @default(true) @map("accepted_recommendation")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  symptoms        ObservatorySurveySymptom[]
+  recommendations ObservatorySurveyRecommendation[]
+
+  @@index([city])
+  @@index([createdAt])
+  @@map("observatory_surveys")
+}
+
+model ObservatorySurveySymptom {
+  id       Int               @id @default(autoincrement())
+  surveyId String            @map("survey_id")
+  text     String
+  survey   ObservatorySurvey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@map("observatory_survey_symptoms")
+}
+
+model ObservatorySurveyRecommendation {
+  id            Int               @id @default(autoincrement())
+  surveyId      String            @map("survey_id")
+  treatmentId   String            @map("treatment_id")
+  treatmentName String            @map("treatment_name")
+  score         Int
+  rank          Int
+  survey        ObservatorySurvey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@map("observatory_survey_recommendations")
 }

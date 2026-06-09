@@ -18,6 +18,7 @@ const LINKS = [
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/#ingredientes", label: "Ingredientes" },
   { href: "/#catalogo", label: "Catálogo" },
+  { href: "/resultados", label: "Resultados" },
 ] as const;
 
 function CartNavButton({ onNavigate }: { onNavigate?: () => void }) {
