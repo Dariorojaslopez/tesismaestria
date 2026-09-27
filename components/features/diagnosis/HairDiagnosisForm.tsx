@@ -23,6 +23,7 @@ import {
   cancelBotSpeech,
   enqueueBotSpeech,
   primeSpeechVoices,
+  toSpokenSummary,
 } from "@/lib/speech/botSpeech";
 import { cn } from "@/lib/utils";
 import { Results } from "./Results";
@@ -823,7 +824,11 @@ export function HairDiagnosisForm({
             <ChatBubble
               role="bot"
               speechKey="bot-paso4-resultados"
-              speechText={explanation}
+              speechText={
+                explanation
+                  ? toSpokenSummary(explanation)
+                  : "Con lo que me cuentas, esto encaja bien contigo."
+              }
             >
               <p className="font-semibold text-zinc-900" aria-hidden="true">
                 Paso 4 de 4
