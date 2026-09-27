@@ -65,7 +65,7 @@ function randomDateWithinMonths(monthsBack: number): Date {
   return new Date(past.getTime() + Math.random() * span);
 }
 
-export async function seedObservatory(prisma: PrismaClient, total = 1480) {
+export async function seedObservatory(prisma: PrismaClient, total = 1527) {
   const existing = await prisma.observatorySurvey.count();
   if (existing > 0) {
     console.log(
@@ -87,9 +87,10 @@ export async function seedObservatory(prisma: PrismaClient, total = 1480) {
         .sort(() => Math.random() - 0.5)
         .slice(0, symptomCount);
       const top = pickWeighted(TOP_TREATMENTS);
+      const secondaryCount = 1 + Math.floor(Math.random() * 2); // 1 o 2 extras
       const secondary = TOP_TREATMENTS.filter((t) => t.id !== top.id)
         .sort(() => Math.random() - 0.5)
-        .slice(0, 2);
+        .slice(0, secondaryCount);
 
       const recommendations = [
         { ...top, score: 18 + Math.floor(Math.random() * 6), rank: 1 },
@@ -101,6 +102,14 @@ export async function seedObservatory(prisma: PrismaClient, total = 1480) {
       ];
 
       const name = `${FIRST_NAMES[(created + index) % FIRST_NAMES.length]} ${city === "Cartagena" ? "de la Rosa" : "Gómez"}`;
+
+      const interestRoll = Math.random();
+      const naturalProductsInterest =
+        interestRoll > 0.82
+          ? "Explorando opciones naturales"
+          : interestRoll > 0.12
+            ? "Alto — prefiero ingredientes botánicos"
+            : "Prefiero lo que ya uso";
 
       return prisma.observatorySurvey.create({
         data: {
@@ -114,7 +123,7 @@ export async function seedObservatory(prisma: PrismaClient, total = 1480) {
           usesHeat: Math.random() > 0.6,
           usesChemicals: Math.random() > 0.7,
           careRoutine: "Intermedia (mascarillas ocasionales)",
-          naturalProductsInterest: "Alto — prefiero ingredientes botánicos",
+          naturalProductsInterest,
           wantsRecommendations: true,
           wantsNewsletter: Math.random() > 0.75,
           purchaseIntent: "Evaluando opciones este mes",

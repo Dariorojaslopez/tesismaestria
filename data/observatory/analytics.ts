@@ -2,28 +2,28 @@ export const OBSERVATORY_KPIS = [
   {
     id: "diagnostics",
     label: "Diagnósticos digitales",
-    value: 15000,
+    value: 15127,
     suffix: "+",
     trend: "+18% vs trimestre anterior",
   },
   {
     id: "users",
     label: "Usuarias registradas",
-    value: 8500,
+    value: 8634,
     suffix: "+",
     trend: "+12% crecimiento anual",
   },
   {
     id: "recommendations",
     label: "Recomendaciones generadas",
-    value: 45000,
+    value: 44817,
     suffix: "+",
     trend: "Motor IA Ellas v2",
   },
   {
     id: "ai-interactions",
     label: "Interacciones con IA",
-    value: 120000,
+    value: 120463,
     suffix: "+",
     trend: "Asistente capilar 24/7",
   },
@@ -37,7 +37,7 @@ export const OBSERVATORY_KPIS = [
   {
     id: "natural-interest",
     label: "Interés en tratamientos naturales",
-    value: 87,
+    value: 91,
     suffix: "%",
     trend: "Preferencia por ingredientes botánicos",
   },
@@ -88,12 +88,12 @@ export const INGREDIENT_RANKING = [
 ];
 
 export const MONTHLY_PLATFORM_USAGE = [
-  { month: "Ene", sesiones: 4200, diagnosticos: 820, compras: 180 },
-  { month: "Feb", sesiones: 4580, diagnosticos: 940, compras: 210 },
-  { month: "Mar", sesiones: 5120, diagnosticos: 1100, compras: 245 },
-  { month: "Abr", sesiones: 5480, diagnosticos: 1280, compras: 280 },
-  { month: "May", sesiones: 5890, diagnosticos: 1450, compras: 310 },
-  { month: "Jun", sesiones: 6320, diagnosticos: 1620, compras: 340 },
+  { month: "Abr", sesiones: 4200, diagnosticos: 980, compras: 165 },
+  { month: "May", sesiones: 4780, diagnosticos: 1120, compras: 198 },
+  { month: "Jun", sesiones: 5420, diagnosticos: 1280, compras: 235 },
+  { month: "Jul", sesiones: 6150, diagnosticos: 1460, compras: 278 },
+  { month: "Ago", sesiones: 6980, diagnosticos: 1680, compras: 325 },
+  { month: "Sep", sesiones: 7920, diagnosticos: 1920, compras: 380 },
 ];
 
 export const RECOMMENDATION_ACCEPTANCE = [
