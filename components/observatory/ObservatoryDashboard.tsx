@@ -181,18 +181,53 @@ export function ObservatoryDashboard({
 
           <ChartPanel
             title="Evolución mensual de la plataforma"
-            subtitle="Sesiones, diagnósticos y compras"
+            subtitle="Sesiones y diagnósticos (izq.) · Compras (der.)"
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyPlatformUsage}>
                 <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
-                <YAxis tick={axisTick} axisLine={false} tickLine={false} />
+                <YAxis
+                  yAxisId="left"
+                  tick={axisTick}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ ...axisTick, fill: CHART_PALETTE[4] }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                />
                 <Tooltip contentStyle={chartTooltipStyle} />
                 <Legend wrapperStyle={chartLegendStyle} />
-                <Line type="monotone" dataKey="sesiones" stroke={CHART_PALETTE[1]} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="diagnosticos" stroke={CHART_PALETTE[0]} strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="compras" stroke={CHART_PALETTE[4]} strokeWidth={2} dot={false} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="sesiones"
+                  stroke={CHART_PALETTE[1]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="diagnosticos"
+                  stroke={CHART_PALETTE[0]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="compras"
+                  stroke={CHART_PALETTE[4]}
+                  strokeWidth={2.5}
+                  dot={{ fill: CHART_PALETTE[4], r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </ChartPanel>

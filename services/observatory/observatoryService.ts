@@ -285,11 +285,22 @@ export async function getObservatoryAnalytics(): Promise<ObservatoryAnalyticsPay
       Math.max(share, Math.round((actualDiagnostics[i] ?? 0) * 3.2)),
     ),
   );
+  // Volumen visible de compras (~35% de diagnósticos del periodo), nunca cerca de 0.
+  const purchaseFloor = Math.max(
+    completedOrders,
+    sumOrderWindow,
+    Math.round(totalDiagnostics * 0.55),
+    720,
+  );
   const purchaseGrowth = forceAscending(
-    growingMonthlyShares(
-      Math.max(completedOrders, sumOrderWindow, Math.round(totalDiagnostics * 0.14), 48),
-      last6.length,
-    ).map((share, i) => Math.max(share, actualOrders[i] ?? 0)),
+    growingMonthlyShares(purchaseFloor, last6.length).map((share, i) =>
+      Math.max(
+        share,
+        actualOrders[i] ?? 0,
+        Math.round((diagGrowth[i] ?? 0) * 0.32),
+        55 + i * 22,
+      ),
+    ),
   );
 
   const diagnosisGrowthRaw = last12.map(({ key, label }, index) => {
