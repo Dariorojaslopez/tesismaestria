@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { AddToCartButton } from "@/components/cart";
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
 import { brandImageSrcForTreatmentId } from "@/lib/brandProductImage";
+import { explainMatch } from "@/lib/diagnosis/matchReason";
 import { cn } from "@/lib/utils";
 
 /** Modelo mostrado en lista (API; el detalle vive en `/mascarillas/[id]`). */
@@ -70,11 +71,13 @@ function TreatmentBrandImage({
 function ProductCard({
   treatment,
   afroSubType,
+  userSymptoms,
   index,
   onOpen,
 }: {
   treatment: ResultsTreatment;
   afroSubType?: AfroSubType;
+  userSymptoms?: string[];
   index: number;
   onOpen: () => void;
 }) {
@@ -83,6 +86,12 @@ function ProductCard({
     afroSubType && treatment.afroBenefitByType?.[afroSubType]
       ? treatment.afroBenefitByType[afroSubType]
       : null;
+  const symptomKey = userSymptoms?.join("|") ?? "";
+  const reason = useMemo(() => {
+    const symptoms = symptomKey ? symptomKey.split("|") : [];
+    if (symptoms.length === 0) return "";
+    return explainMatch(treatment, symptoms, afroSubType).headline;
+  }, [treatment, afroSubType, symptomKey]);
 
   return (
     <li className="flex w-full min-w-0 flex-col rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5">
@@ -92,6 +101,9 @@ function ProductCard({
       <h3 className="mt-1 text-lg font-semibold text-slate-900">
         {treatment.name}
       </h3>
+      {reason ? (
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{reason}</p>
+      ) : null}
       <TreatmentBrandImage
         treatmentId={treatment.id}
         alt={treatment.name}
@@ -253,6 +265,7 @@ function ProductModal({
 
 export function Results({
   treatments,
+  userSymptoms,
   hairTypeLabel,
   afroSubType,
   onRetry,
@@ -288,11 +301,6 @@ export function Results({
             <span className="font-medium text-slate-800">{hairTypeLabel}</span>
           </p>
         ) : null}
-        {hasTreatments ? (
-          <p className="mt-2 w-full text-justify text-base leading-relaxed text-slate-700 sm:mt-3">
-            Te recomendamos alguno de estos 3 productos.
-          </p>
-        ) : null}
       </div>
 
       {hasTreatments ? (
@@ -303,6 +311,7 @@ export function Results({
                 key={t.id}
                 treatment={t}
                 afroSubType={afroSubType}
+                userSymptoms={userSymptoms}
                 index={index}
                 onOpen={() => openModal(t)}
               />

@@ -1,5 +1,10 @@
 import { TREATMENTS } from "@/data/treatments";
-import { getRecommendationsWithScores } from "@/lib/recommendation";
+import type { CareHabits, WashRhythm } from "@/lib/diagnosis/careHabits";
+import { ethnicHairGuidance } from "@/lib/diagnosis/ethnicHairGuidance";
+import {
+  getRecommendationsWithScores,
+  selectComplementaryRecommendations,
+} from "@/lib/recommendation";
 import type { ObservatoryResult, ObservatoryWizardData } from "./types";
 
 const HAIR_LABELS: Record<string, string> = {
@@ -17,10 +22,35 @@ function buildProfileLabel(data: ObservatoryWizardData): string {
   return `Cabello ${hair}`;
 }
 
+function observatoryHabits(data: ObservatoryWizardData): CareHabits {
+  const washRhythm: WashRhythm | undefined =
+    data.washFrequency === "Diario" || data.washFrequency === "2-3 veces por semana"
+      ? "often"
+      : data.washFrequency === "Semanal"
+        ? "weekly"
+        : data.washFrequency === "Quincenal"
+          ? "rare"
+          : undefined;
+  return {
+    washRhythm,
+    usesHeat: data.usesHeat,
+    usesChemicals: data.usesChemicals,
+  };
+}
+
 function buildDiagnosisSummary(data: ObservatoryWizardData): string {
-  const symptoms = data.symptoms.slice(0, 3).join(", ");
-  const city = data.city ? ` en ${data.city}` : "";
-  return `Perfil capilar${city} con foco en ${symptoms || "equilibrio y salud del cuero cabelludo"}. La IA Ellas prioriza ingredientes naturales acordes a tus hábitos declarados.`;
+  const habits = observatoryHabits(data);
+  const guidance = ethnicHairGuidance({
+    symptoms: data.symptoms,
+    hairType: data.hairType,
+    afroSubType:
+      data.hairType === "coily" && data.afroSubType
+        ? data.afroSubType
+        : undefined,
+    habits,
+  });
+  const note = guidance.notes[0] ? ` ${guidance.notes[0]}` : "";
+  return `${guidance.structure} ${guidance.context}${note}`;
 }
 
 function buildHabitInsights(data: ObservatoryWizardData): string[] {
@@ -75,13 +105,19 @@ function compatibilityPercent(
 export function computeObservatoryResult(
   data: ObservatoryWizardData,
 ): ObservatoryResult {
-  const scoredTreatments = getRecommendationsWithScores(
+  const habits = observatoryHabits(data);
+  const ranked = getRecommendationsWithScores(
     data.symptoms,
     TREATMENTS,
     data.hairType === "coily" && data.afroSubType
-      ? { afroSubType: data.afroSubType }
-      : {},
-  ).slice(0, 5);
+      ? { afroSubType: data.afroSubType, habits }
+      : { habits },
+  );
+  const scoredTreatments = selectComplementaryRecommendations(
+    ranked,
+    data.symptoms,
+    5,
+  );
 
   return {
     profileLabel: buildProfileLabel(data),

@@ -1,4 +1,5 @@
 import type { TreatmentRecord } from "@/data/treatments";
+import type { CareHabits } from "@/lib/diagnosis/careHabits";
 
 export type DiagnosisInput = {
   symptoms: string[];
@@ -8,6 +9,7 @@ export type DiagnosisInput = {
   hairTypeLabel?: string;
   /** Valor crudo del cliente; se normaliza en `processDiagnosis`. */
   afroSubType?: string | null;
+  habits?: CareHabits;
 };
 
 export type DiagnosisResult = {

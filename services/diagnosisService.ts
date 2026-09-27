@@ -1,4 +1,7 @@
-import { getRecommendationsWithScores } from "@/lib/recommendation";
+import {
+  getRecommendationsWithScores,
+  selectComplementaryRecommendations,
+} from "@/lib/recommendation";
 import { persistDiagnosis } from "@/services/repositories/diagnosisRepository";
 import { findAllTreatments } from "@/services/repositories/treatmentRepository";
 import { formatDiagnosisExplanation } from "./diagnosis/formatExplanation";
@@ -18,9 +21,11 @@ export async function processDiagnosis(
   const symptoms = validateSymptoms(input.symptoms);
   const afroSubType = parseAfroSubType(input.afroSubType);
   const catalog = await findAllTreatments();
-  const recommendations = getRecommendationsWithScores(symptoms, catalog, {
+  const ranked = getRecommendationsWithScores(symptoms, catalog, {
     afroSubType,
+    habits: input.habits,
   });
+  const recommendations = selectComplementaryRecommendations(ranked, symptoms, 3);
   const treatments = recommendations.map((row) => row.treatment);
   const hairTypeLabel =
     typeof input.hairTypeLabel === "string" && input.hairTypeLabel.trim()
@@ -31,7 +36,9 @@ export async function processDiagnosis(
 
   const explanation = formatDiagnosisExplanation(symptoms, treatments, {
     hairType: hairTypeLabel,
+    hairPattern: input.hairType,
     afroSubType,
+    habits: input.habits,
   });
 
   const sessionId = await persistDiagnosis({

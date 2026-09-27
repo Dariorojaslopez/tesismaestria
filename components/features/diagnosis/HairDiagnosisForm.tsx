@@ -7,10 +7,18 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  Fragment,
 } from "react";
 import { TechAvatarIcon } from "@/components/ui/TechAvatarIcon";
 import type { TaxonomyData } from "@/lib/db/mappers";
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
+import {
+  WASH_OPTIONS,
+  ZONE_OPTIONS,
+  describeHabits,
+  type ConcernZone,
+  type WashRhythm,
+} from "@/lib/diagnosis/careHabits";
 import {
   cancelBotSpeech,
   enqueueBotSpeech,
@@ -55,7 +63,7 @@ const FALLBACK_SYMPTOM_OPTIONS = [
   },
 ] as const;
 
-type Phase = "hair" | "afro" | "symptoms" | "results";
+type Phase = "hair" | "afro" | "symptoms" | "habits" | "results";
 
 type DiagnosisApiOk = {
   sessionId?: string;
@@ -149,8 +157,10 @@ function StepIndicator({ phase }: { phase: Phase }) {
       ? 1
       : phase === "symptoms"
         ? 2
-        : 3;
-  const lines = [step > 1, step > 2] as const;
+        : phase === "habits"
+          ? 3
+          : 4;
+  const labels = ["Tipo", "Síntomas", "Hábitos", "Resultado"] as const;
 
   return (
     <div
@@ -158,91 +168,52 @@ function StepIndicator({ phase }: { phase: Phase }) {
       aria-label="Progreso del asistente"
     >
       <ol className="flex items-center gap-0" role="list">
-        <li className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
-          <span
-            className={cn(
-              "flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors sm:size-8",
-              step >= 1
-                ? step === 1
-                  ? "bg-zinc-900 text-white ring-2 ring-emerald-400/70"
-                  : "bg-forest-600 text-white"
-                : "bg-zinc-200 text-zinc-600",
-            )}
-            aria-current={step === 1 ? "step" : undefined}
-          >
-            {step > 1 ? "✓" : "1"}
-          </span>
-          <span
-            className={cn(
-              "hidden truncate text-[10px] font-medium uppercase tracking-wide sm:block",
-              step === 1 ? "text-zinc-900" : "text-zinc-500",
-            )}
-          >
-            Tipo
-          </span>
-        </li>
-        <li
-          className={cn(
-            "mx-0.5 h-0.5 flex-1 max-w-[40px] rounded-full sm:max-w-none",
-            lines[0] ? "bg-forest-500" : "bg-zinc-200",
-          )}
-          aria-hidden
-        />
-        <li className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
-          <span
-            className={cn(
-              "flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors sm:size-8",
-              step >= 2
-                ? step === 2
-                  ? "bg-zinc-900 text-white ring-2 ring-emerald-400/70"
-                  : "bg-forest-600 text-white"
-                : "bg-zinc-200 text-zinc-500",
-            )}
-            aria-current={step === 2 ? "step" : undefined}
-          >
-            {step > 2 ? "✓" : "2"}
-          </span>
-          <span
-            className={cn(
-              "hidden truncate text-[10px] font-medium uppercase tracking-wide sm:block",
-              step === 2 ? "text-zinc-900" : "text-zinc-500",
-            )}
-          >
-            Síntomas
-          </span>
-        </li>
-        <li
-          className={cn(
-            "mx-0.5 h-0.5 flex-1 max-w-[40px] rounded-full sm:max-w-none",
-            lines[1] ? "bg-forest-500" : "bg-zinc-200",
-          )}
-          aria-hidden
-        />
-        <li className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
-          <span
-            className={cn(
-              "flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors sm:size-8",
-              step === 3
-                ? "bg-zinc-900 text-white ring-2 ring-emerald-400/70"
-                : "bg-zinc-200 text-zinc-500",
-            )}
-            aria-current={step === 3 ? "step" : undefined}
-          >
-            3
-          </span>
-          <span
-            className={cn(
-              "hidden truncate text-[10px] font-medium uppercase tracking-wide sm:block",
-              step === 3 ? "text-zinc-900" : "text-zinc-500",
-            )}
-          >
-            Resultados
-          </span>
-        </li>
+        {labels.map((label, index) => {
+          const n = index + 1;
+          const active = step === n;
+          const done = step > n;
+          return (
+            <Fragment key={label}>
+              {index > 0 ? (
+                <li
+                  className={cn(
+                    "mx-0.5 h-0.5 flex-1 max-w-[28px] rounded-full sm:max-w-none",
+                    done || active ? "bg-forest-500" : "bg-zinc-200",
+                  )}
+                  aria-hidden
+                />
+              ) : null}
+              <li className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-full text-xs font-semibold transition-colors sm:size-8",
+                    active
+                      ? "bg-zinc-900 text-white ring-2 ring-emerald-400/70"
+                      : done
+                        ? "bg-forest-600 text-white"
+                        : "bg-zinc-200 text-zinc-600",
+                  )}
+                  aria-current={active ? "step" : undefined}
+                >
+                  {done ? "✓" : n}
+                </span>
+                <span
+                  className={cn(
+                    "hidden truncate text-[10px] font-medium uppercase tracking-wide sm:block",
+                    active ? "text-zinc-900" : "text-zinc-500",
+                  )}
+                >
+                  {label}
+                </span>
+              </li>
+            </Fragment>
+          );
+        })}
       </ol>
     </div>
   );
 }
+
 
 export function HairDiagnosisForm({
   className,
@@ -254,9 +225,14 @@ export function HairDiagnosisForm({
   const [hairType, setHairType] = useState("");
   const [afroSubType, setAfroSubType] = useState<AfroSubType | null>(null);
   const [symptoms, setSymptoms] = useState<Set<string>>(() => new Set());
+  const [concernZone, setConcernZone] = useState<ConcernZone | null>(null);
+  const [washRhythm, setWashRhythm] = useState<WashRhythm | null>(null);
+  const [usesHeat, setUsesHeat] = useState<boolean | null>(null);
+  const [usesChemicals, setUsesChemicals] = useState<boolean | null>(null);
   const [results, setResults] = useState<TreatmentRecord[] | null>(null);
   const [explanation, setExplanation] = useState<string>("");
   const [symptomHint, setSymptomHint] = useState(false);
+  const [habitHint, setHabitHint] = useState(false);
   const [diagnosisLoading, setDiagnosisLoading] = useState(false);
   const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
   const [taxonomy, setTaxonomy] = useState<TaxonomyData | null>(null);
@@ -294,6 +270,10 @@ export function HairDiagnosisForm({
     afroSubType,
     results,
     symptoms.size,
+    concernZone,
+    washRhythm,
+    usesHeat,
+    usesChemicals,
     diagnosisLoading,
     diagnosisError,
   ]);
@@ -310,6 +290,13 @@ export function HairDiagnosisForm({
       (v) => symptomOptions.find((o) => o.value === v)?.label ?? v,
     )
     .join(", ");
+
+  const habitSummary = describeHabits({
+    concernZone: concernZone ?? undefined,
+    washRhythm: washRhythm ?? undefined,
+    usesHeat: usesHeat ?? undefined,
+    usesChemicals: usesChemicals ?? undefined,
+  });
 
   const handleHairPick = useCallback((value: string) => {
     setHairType(value);
@@ -341,12 +328,27 @@ export function HairDiagnosisForm({
     setDiagnosisError(null);
   }, []);
 
-  const handleShowRecommendations = useCallback(async () => {
+  const continueToHabits = useCallback(() => {
     if (symptoms.size === 0) {
       setSymptomHint(true);
       return;
     }
     setSymptomHint(false);
+    setDiagnosisError(null);
+    setPhase("habits");
+  }, [symptoms.size]);
+
+  const handleShowRecommendations = useCallback(async () => {
+    if (
+      !concernZone ||
+      !washRhythm ||
+      usesHeat === null ||
+      usesChemicals === null
+    ) {
+      setHabitHint(true);
+      return;
+    }
+    setHabitHint(false);
     setDiagnosisError(null);
     setDiagnosisLoading(true);
 
@@ -359,6 +361,12 @@ export function HairDiagnosisForm({
           hairType,
           hairTypeLabel,
           afroSubType: hairType === "coily" ? afroSubType : undefined,
+          habits: {
+            concernZone,
+            washRhythm,
+            usesHeat,
+            usesChemicals,
+          },
         }),
       });
 
@@ -385,29 +393,36 @@ export function HairDiagnosisForm({
     } finally {
       setDiagnosisLoading(false);
     }
-  }, [symptoms, hairType, hairTypeLabel, afroSubType]);
+  }, [symptoms, hairType, hairTypeLabel, afroSubType, concernZone, washRhythm, usesHeat, usesChemicals]);
 
   const handleRetry = useCallback(() => {
     cancelBotSpeech();
     setHairType("");
     setAfroSubType(null);
     setSymptoms(new Set());
+    setConcernZone(null);
+    setWashRhythm(null);
+    setUsesHeat(null);
+    setUsesChemicals(null);
     setResults(null);
     setExplanation("");
     setPhase("hair");
     setSymptomHint(false);
+    setHabitHint(false);
     setDiagnosisError(null);
     rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   const headerHint =
     phase === "hair"
-      ? "Paso 1 de 3 · Elige tu tipo de cabello"
+      ? "Paso 1 de 4 · Elige tu tipo de cabello"
       : phase === "afro"
-        ? "Paso 1 de 3 · Subtipo 4A / 4B / 4C"
+        ? "Paso 1 de 4 · Subtipo 4A / 4B / 4C"
         : phase === "symptoms"
-          ? "Paso 2 de 3 · Marca lo que te ocurre"
-          : "Paso 3 de 3 · Recomendaciones listas";
+          ? "Paso 2 de 4 · Marca lo que te ocurre"
+          : phase === "habits"
+            ? "Paso 3 de 4 · Tu rutina"
+            : "Paso 4 de 4 · Recomendaciones listas";
 
   const chipBase =
     "min-h-[44px] rounded-xl border px-4 py-3 text-left text-sm font-medium shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600 active:scale-[0.99] sm:min-h-0 sm:rounded-full sm:py-2.5";
@@ -461,8 +476,8 @@ export function HairDiagnosisForm({
           <ChatBubble role="bot" speechKey="bot-saludo" speechText="¡Hola!">
             <p className="font-semibold text-zinc-900">¡Hola!</p>
             <p className="mt-1.5 text-zinc-600">
-              Vamos en tres pasos: primero tu tipo de cabello, luego lo que te
-              preocupa, y al final ideas concretas. Empecemos.
+              Vamos en cuatro pasos: tipo de cabello, lo que te preocupa, tu
+              rutina y al final ideas concretas. Empecemos.
             </p>
           </ChatBubble>
 
@@ -472,7 +487,7 @@ export function HairDiagnosisForm({
             speechText="¿Cuál es tu tipo de cabello?"
           >
             <p className="font-semibold text-zinc-900" aria-hidden="true">
-              Paso 1 de 3
+              Paso 1 de 4
             </p>
             <p className="mt-1">¿Cuál es tu tipo de cabello?</p>
           </ChatBubble>
@@ -529,7 +544,7 @@ export function HairDiagnosisForm({
                   speechText="¿Cuál se acerca más al tuyo: 4A, 4B o 4C?"
                 >
                   <p className="font-semibold text-zinc-900" aria-hidden="true">
-                    Paso 1 de 3
+                    Paso 1 de 4
                   </p>
                   <p className="mt-1">
                     En cabello crespo / afro usamos la clasificación 4A, 4B y
@@ -570,12 +585,11 @@ export function HairDiagnosisForm({
                 speechText="¿Qué problema presentas?"
               >
                 <p className="font-semibold text-zinc-900" aria-hidden="true">
-                  Paso 2 de 3
+                  Paso 2 de 4
                 </p>
                 <p className="mt-1">¿Qué problema presentas?</p>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Puedes marcar varios a la vez. Luego pediremos las
-                  recomendaciones.
+                  Puedes marcar varios. Después te pregunto por tu rutina.
                 </p>
               </ChatBubble>
             ) : null}
@@ -587,7 +601,7 @@ export function HairDiagnosisForm({
                 aria-label="Opciones de síntomas"
               >
                 <p className="text-xs font-medium text-zinc-500">
-                  Selecciona y pulsa «Ver recomendaciones»
+                  Selecciona y pulsa «Seguir»
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {symptomOptions.map((opt) => {
@@ -624,14 +638,169 @@ export function HairDiagnosisForm({
                 ) : null}
                 <button
                   type="button"
-                  disabled={diagnosisLoading}
-                  onClick={() => void handleShowRecommendations()}
-                  className="min-h-[48px] w-full rounded-xl bg-zinc-900 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[220px]"
+                  onClick={continueToHabits}
+                  className="min-h-[48px] w-full rounded-xl bg-zinc-900 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 active:scale-[0.99] sm:w-auto sm:min-w-[220px]"
                 >
-                  {diagnosisLoading ? "Consultando…" : "Ver recomendaciones"}
+                  Seguir
                 </button>
               </div>
             ) : null}
+          </section>
+        ) : null}
+
+        {phase === "habits" ? (
+          <section
+            className="space-y-4 border-t border-zinc-300/50 pt-4"
+            aria-labelledby="chat-step-habits-title"
+          >
+            <h2 id="chat-step-habits-title" className="sr-only">
+              Paso 3: rutina
+            </h2>
+            <ChatBubble role="user">
+              <p>{symptomLabelsJoined}</p>
+            </ChatBubble>
+            <ChatBubble
+              role="bot"
+              speechKey="bot-paso3-habitos"
+              speechText="Para afinar el diagnóstico, cuéntame dónde lo notas, cada cuánto lavas y si usas calor o químicos."
+            >
+              <p className="font-semibold text-zinc-900" aria-hidden="true">
+                Paso 3 de 4
+              </p>
+              <p className="mt-1">
+                Para afinar el diagnóstico, cuéntame tu rutina.
+              </p>
+            </ChatBubble>
+            <div className="ml-[2.75rem] space-y-4 rounded-2xl border border-white/70 bg-white/90 p-3 shadow-sm sm:ml-[3.25rem] sm:p-4">
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-zinc-800">
+                  ¿Dónde lo notas más?
+                </legend>
+                <div className="flex flex-col gap-2">
+                  {ZONE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={concernZone === opt.value}
+                      onClick={() => {
+                        setConcernZone(opt.value);
+                        setHabitHint(false);
+                      }}
+                      className={cn(
+                        chipBase,
+                        concernZone === opt.value
+                          ? "border-forest-600 bg-forest-600 text-white"
+                          : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-zinc-800">
+                  ¿Cada cuánto lavas el cabello?
+                </legend>
+                <div className="flex flex-col gap-2">
+                  {WASH_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={washRhythm === opt.value}
+                      onClick={() => {
+                        setWashRhythm(opt.value);
+                        setHabitHint(false);
+                      }}
+                      className={cn(
+                        chipBase,
+                        washRhythm === opt.value
+                          ? "border-forest-600 bg-forest-600 text-white"
+                          : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-zinc-800">
+                  ¿Usas plancha o secador con frecuencia?
+                </legend>
+                <div className="flex gap-2">
+                  {[
+                    { value: true, label: "Sí" },
+                    { value: false, label: "No" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      aria-pressed={usesHeat === opt.value}
+                      onClick={() => {
+                        setUsesHeat(opt.value);
+                        setHabitHint(false);
+                      }}
+                      className={cn(
+                        chipBase,
+                        usesHeat === opt.value
+                          ? "border-forest-600 bg-forest-600 text-white"
+                          : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-zinc-800">
+                  ¿Has usado tinte, alisado u otro químico?
+                </legend>
+                <div className="flex gap-2">
+                  {[
+                    { value: true, label: "Sí" },
+                    { value: false, label: "No" },
+                  ].map((opt) => (
+                    <button
+                      key={`chem-${opt.label}`}
+                      type="button"
+                      aria-pressed={usesChemicals === opt.value}
+                      onClick={() => {
+                        setUsesChemicals(opt.value);
+                        setHabitHint(false);
+                      }}
+                      className={cn(
+                        chipBase,
+                        usesChemicals === opt.value
+                          ? "border-forest-600 bg-forest-600 text-white"
+                          : "border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              {habitHint ? (
+                <p className="text-sm text-amber-800" role="alert">
+                  Responde las cuatro preguntas para ver el diagnóstico.
+                </p>
+              ) : null}
+              {diagnosisError ? (
+                <p className="text-sm text-red-600" role="alert">
+                  {diagnosisError}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                disabled={diagnosisLoading}
+                onClick={() => void handleShowRecommendations()}
+                className="min-h-[48px] w-full rounded-xl bg-zinc-900 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[220px]"
+              >
+                {diagnosisLoading ? "Consultando…" : "Ver recomendaciones"}
+              </button>
+            </div>
           </section>
         ) : null}
 
@@ -644,28 +813,24 @@ export function HairDiagnosisForm({
             aria-labelledby="chat-step-3-title"
           >
             <h2 id="chat-step-3-title" className="sr-only">
-              Paso 3: recomendaciones
+              Paso 4: recomendaciones
             </h2>
 
             <ChatBubble role="user">
-              <p>{symptomLabelsJoined}</p>
+              <p>{habitSummary || symptomLabelsJoined}</p>
             </ChatBubble>
 
             <ChatBubble
               role="bot"
-              speechKey="bot-paso3-resultados"
-              speechText="Con lo que me cuentas, esto encaja bien contigo."
+              speechKey="bot-paso4-resultados"
+              speechText={explanation}
             >
               <p className="font-semibold text-zinc-900" aria-hidden="true">
-                Paso 3 de 3
+                Paso 4 de 4
               </p>
-              <p className="mt-1">
-                Con lo que me cuentas, esto encaja bien contigo
-              </p>
-              <p className="mt-1.5 text-sm text-zinc-600">
-                Son sugerencias generales con ingredientes naturales. Si hay
-                enrojecimiento fuerte, dolor o caída muy rápida, consulta a un
-                especialista.
+              <p className="mt-1 whitespace-pre-line">
+                {explanation ||
+                  "Con lo que me cuentas, esto encaja bien contigo."}
               </p>
             </ChatBubble>
 

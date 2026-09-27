@@ -1,8 +1,10 @@
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
+import type { CareHabits } from "@/lib/diagnosis/careHabits";
 export type { AfroSubType, TreatmentRecord } from "@/data/treatments";
 
 export type RecommendationContext = {
   afroSubType?: AfroSubType;
+  habits?: CareHabits;
 };
 
 export type ScoredTreatment = {
@@ -75,12 +77,35 @@ function afroTypeBonus(
   return note && note.trim().length > 0 ? AFRO_TYPE_BONUS : 0;
 }
 
+function habitBonus(treatment: TreatmentRecord, habits: CareHabits | undefined): number {
+  if (!habits) return 0;
+  const blob = normalize(
+    [...treatment.symptoms, ...treatment.benefits, treatment.generalNote ?? ""].join(" "),
+  );
+  let bonus = 0;
+  const stressed = habits.usesHeat === true || habits.usesChemicals === true;
+  if (stressed && /repar|fortalec|rotur|quiebre|elastic|punta/.test(blob)) {
+    bonus += 2;
+  }
+  if (habits.concernZone === "scalp" && /caspa|picor|caida|cuero/.test(blob)) {
+    bonus += 2;
+  }
+  if (
+    (habits.concernZone === "lengths" || habits.concernZone === "both") &&
+    /puntas|rotur|brillo|hidrat/.test(blob)
+  ) {
+    bonus += 1;
+  }
+  return bonus;
+}
+
 function scoreTreatment(
   treatment: TreatmentRecord,
   userSymptomsNorm: string[],
   context: RecommendationContext,
 ): number {
   let total = afroTypeBonus(treatment, context.afroSubType);
+  total += habitBonus(treatment, context.habits);
   for (const symptom of userSymptomsNorm) {
     total += scoreAgainstSymptomList(symptom, treatment.symptoms);
     total += scoreAgainstBenefits(symptom, treatment.benefits);
@@ -141,4 +166,88 @@ export function getRecommendations(
   return getRecommendationsWithScores(symptoms, treatments, context).map(
     (row) => row.treatment,
   );
+}
+
+export type SymptomMatch = {
+  symptom: string;
+  strength: "strong" | "related";
+};
+
+/** Coincidencia fuerte = el síntoma está en la ficha; relacionada = aparece en beneficios. */
+export function classifySymptomMatches(
+  treatment: TreatmentRecord,
+  userSymptoms: readonly string[],
+): SymptomMatch[] {
+  const matches: SymptomMatch[] = [];
+  for (const symptom of userSymptoms) {
+    const key = normalize(symptom);
+    if (!key) continue;
+    if (scoreAgainstSymptomList(key, treatment.symptoms) >= 3) {
+      matches.push({ symptom, strength: "strong" });
+      continue;
+    }
+    if (scoreAgainstBenefits(key, treatment.benefits) > 0) {
+      matches.push({ symptom, strength: "related" });
+    }
+  }
+  return matches;
+}
+
+/**
+ * Conserva la mascarilla de mayor puntaje y completa el cupo con otras
+ * que cubran síntomas todavía no atendidos.
+ */
+export function selectComplementaryRecommendations(
+  ranked: readonly ScoredTreatment[],
+  userSymptoms: readonly string[],
+  limit = 3,
+): ScoredTreatment[] {
+  if (ranked.length <= 1) return ranked.slice(0, limit);
+
+  const pool = [...ranked];
+  const picked: ScoredTreatment[] = [];
+  const covered = new Set<string>();
+
+  const cover = (row: ScoredTreatment) => {
+    for (const match of classifySymptomMatches(row.treatment, userSymptoms)) {
+      covered.add(normalize(match.symptom));
+    }
+  };
+
+  const uncoveredWeight = (row: ScoredTreatment) => {
+    let weight = 0;
+    for (const match of classifySymptomMatches(row.treatment, userSymptoms)) {
+      if (covered.has(normalize(match.symptom))) continue;
+      weight += match.strength === "strong" ? 2 : 1;
+    }
+    return weight;
+  };
+
+  const anchor = pool.shift();
+  if (!anchor) return [];
+  picked.push(anchor);
+  cover(anchor);
+
+  while (picked.length < limit && pool.length > 0) {
+    let bestIndex = 0;
+    let bestFresh = -1;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (let i = 0; i < pool.length; i++) {
+      const fresh = uncoveredWeight(pool[i]);
+      const score = pool[i].score;
+      if (fresh > bestFresh || (fresh === bestFresh && score > bestScore)) {
+        bestIndex = i;
+        bestFresh = fresh;
+        bestScore = score;
+      }
+    }
+
+    const chosen = pool.splice(bestIndex, 1)[0];
+    if (!chosen) break;
+    picked.push(chosen);
+    cover(chosen);
+  }
+
+  return picked;
 }

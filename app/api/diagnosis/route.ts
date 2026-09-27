@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-
-export const dynamic = "force-dynamic";
+import { parseCareHabits } from "@/lib/diagnosis/careHabits";
 import {
   DiagnosisValidationError,
   processDiagnosis,
 } from "@/services/diagnosisService";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -37,6 +38,11 @@ export async function POST(request: Request) {
       ? (body as { afroSubType: unknown }).afroSubType
       : undefined;
 
+  const habits =
+    body !== null && typeof body === "object" && "habits" in body
+      ? parseCareHabits((body as { habits: unknown }).habits)
+      : undefined;
+
   try {
     const result = await processDiagnosis({
       symptoms: symptoms as string[],
@@ -47,6 +53,7 @@ export async function POST(request: Request) {
         typeof afroSubType === "string" || afroSubType === null
           ? afroSubType
           : undefined,
+      habits,
     });
     return NextResponse.json(result);
   } catch (error) {
