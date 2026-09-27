@@ -9,7 +9,7 @@ import {
   useState,
   Fragment,
 } from "react";
-import { TechAvatarIcon } from "@/components/ui/TechAvatarIcon";
+import { SpeakingAvatar } from "@/components/ui/SpeakingAvatar";
 import type { TaxonomyData } from "@/lib/db/mappers";
 import type { AfroSubType, TreatmentRecord } from "@/data/treatments";
 import {
@@ -25,6 +25,7 @@ import {
   primeSpeechVoices,
   toSpokenSummary,
 } from "@/lib/speech/botSpeech";
+import { useBotSpeaking } from "@/lib/speech/useBotSpeaking";
 import { cn } from "@/lib/utils";
 import { Results } from "./Results";
 
@@ -122,12 +123,11 @@ function ChatBubble({
         transition={transition}
         className="flex gap-2.5 sm:gap-3"
       >
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-2 ring-white sm:size-10"
-          aria-hidden
-        >
-          <TechAvatarIcon className="size-6 sm:size-7" />
-        </div>
+        <SpeakingAvatar
+          frameClassName="size-9 ring-2 ring-white sm:size-10"
+          className="size-6 sm:size-7"
+          speechKey={speechKey}
+        />
         <div
           ref={botContentRef}
           className="min-w-0 max-w-[min(88%,26rem)] rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-[15px] leading-relaxed text-zinc-800 shadow-sm ring-1 ring-black/[0.05] sm:px-4 sm:py-3"
@@ -298,6 +298,7 @@ export function HairDiagnosisForm({
     usesHeat: usesHeat ?? undefined,
     usesChemicals: usesChemicals ?? undefined,
   });
+  const speaking = useBotSpeaking();
 
   const handleHairPick = useCallback((value: string) => {
     setHairType(value);
@@ -442,19 +443,19 @@ export function HairDiagnosisForm({
     >
       {layout === "page" ? (
         <header className="flex shrink-0 items-center gap-3 border-b border-zinc-200/80 bg-white/95 px-4 py-3 backdrop-blur-sm sm:px-5">
-          <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 shadow-sm ring-1 ring-emerald-200/50"
-            aria-hidden
-          >
-            <TechAvatarIcon className="size-8" />
-          </div>
+          <SpeakingAvatar
+            frameClassName="size-11 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 ring-1 ring-emerald-200/50"
+            className="size-8"
+          />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-zinc-900">Asistente capilar</p>
-            <p className="text-xs leading-snug text-zinc-500">{headerHint}</p>
+            <p className="text-xs leading-snug text-zinc-500">
+              {speaking ? "Hablando…" : headerHint}
+            </p>
           </div>
         </header>
       ) : (
-        <p className="sr-only">{headerHint}</p>
+        <p className="sr-only">{speaking ? "Hablando…" : headerHint}</p>
       )}
 
       <div

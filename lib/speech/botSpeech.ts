@@ -15,6 +15,50 @@ const completedKeys = new Set<string>();
 /** Evita doble lectura en el primer montaje (React Strict Mode / carga de voces). */
 const scheduledKeys = new Set<string>();
 
+type SpeakingListener = (speaking: boolean) => void;
+const speakingListeners = new Set<SpeakingListener>();
+let speaking = false;
+let activeSpeechKey: string | null = null;
+
+function notifySpeaking(): void {
+  for (const listener of speakingListeners) listener(speaking);
+}
+
+function setSpeaking(next: boolean): void {
+  if (speaking === next) return;
+  speaking = next;
+  notifySpeaking();
+}
+
+function setActiveSpeechKey(key: string | null): void {
+  if (activeSpeechKey === key) return;
+  activeSpeechKey = key;
+  notifySpeaking();
+}
+
+function refreshSpeaking(): void {
+  setSpeaking(processing || animatingKeys.size > 0 || queue.length > 0);
+}
+
+/** True mientras el asistente está hablando o tiene frases en cola. */
+export function isBotSpeaking(): boolean {
+  return speaking;
+}
+
+/** Clave del mensaje que se está leyendo ahora (si hay). */
+export function getActiveSpeechKey(): string | null {
+  return activeSpeechKey;
+}
+
+/** Suscripción para animar el avatar. Devuelve unsubscribe. */
+export function subscribeBotSpeaking(listener: SpeakingListener): () => void {
+  speakingListeners.add(listener);
+  listener(speaking);
+  return () => {
+    speakingListeners.delete(listener);
+  };
+}
+
 const PAUSE_BETWEEN_MS = 280;
 const PAUSE_BETWEEN_CHUNKS_MS = 160;
 /** Evita leer diagnósticos enteros: suenan robóticos y agotan. */
@@ -258,6 +302,7 @@ async function speakNext(next: Queued): Promise<void> {
   const voice = pickVoice();
   const profile = speechProfile(voice);
   const chunks = chunkForSpeech(next.text);
+  setActiveSpeechKey(next.key);
 
   try {
     for (let i = 0; i < chunks.length; i++) {
@@ -270,6 +315,8 @@ async function speakNext(next: Queued): Promise<void> {
     animatingKeys.delete(next.key);
     completedKeys.add(next.key);
     processing = false;
+    if (activeSpeechKey === next.key) setActiveSpeechKey(null);
+    refreshSpeaking();
     window.setTimeout(() => {
       void flushQueue();
     }, PAUSE_BETWEEN_MS);
@@ -298,10 +345,12 @@ async function flushQueue(): Promise<void> {
     }
 
     animatingKeys.add(next.key);
+    refreshSpeaking();
     await speakNext(next);
   } catch {
     animatingKeys.delete(next.key);
     processing = false;
+    refreshSpeaking();
     void flushQueue();
   }
 }
@@ -317,6 +366,7 @@ export function enqueueBotSpeech(text: string, key: string): void {
 
   scheduledKeys.add(key);
   queue.push({ text: trimmed, key });
+  refreshSpeaking();
   void flushQueue();
 }
 
@@ -326,6 +376,8 @@ export function cancelBotSpeech(): void {
   animatingKeys.clear();
   completedKeys.clear();
   scheduledKeys.clear();
+  setActiveSpeechKey(null);
+  refreshSpeaking();
   if (typeof window !== "undefined" && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }

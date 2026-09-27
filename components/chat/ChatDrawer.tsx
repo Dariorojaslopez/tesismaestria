@@ -2,14 +2,17 @@
 
 import { motion } from "framer-motion";
 import { HairDiagnosisForm } from "@/components/diagnosis";
-import { TechAvatarIcon } from "@/components/ui/TechAvatarIcon";
+import { SpeakingAvatar } from "@/components/ui/SpeakingAvatar";
 import { cancelBotSpeech } from "@/lib/speech/botSpeech";
+import { useBotSpeaking } from "@/lib/speech/useBotSpeaking";
 
 type Props = {
   onClose: () => void;
 };
 
 export function ChatDrawer({ onClose }: Props) {
+  const speaking = useBotSpeaking();
+
   const close = () => {
     cancelBotSpeech();
     onClose();
@@ -41,9 +44,10 @@ export function ChatDrawer({ onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center gap-3 border-b border-black/[0.06] bg-[#fbfbfd] px-4 py-3.5 backdrop-blur-md sm:px-5">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.06]">
-            <TechAvatarIcon className="size-8" />
-          </div>
+          <SpeakingAvatar
+            frameClassName="size-11 rounded-2xl ring-1 ring-black/[0.06]"
+            className="size-8"
+          />
           <div className="min-w-0 flex-1">
             <h2
               id="chat-drawer-title"
@@ -52,7 +56,9 @@ export function ChatDrawer({ onClose }: Props) {
               Asistente Ellas · IA capilar
             </h2>
             <p className="text-[11px] text-apple-label sm:text-xs">
-              Diagnóstico guiado · Tratamientos naturales
+              {speaking
+                ? "Hablando…"
+                : "Diagnóstico guiado · Tratamientos naturales"}
             </p>
           </div>
           <button
